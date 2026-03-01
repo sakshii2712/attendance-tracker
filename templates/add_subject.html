@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Add Subject — AttendIQ{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-text">
+        <h1 class="page-title">Add Subject</h1>
+        <p class="page-subtitle">Start tracking a new course</p>
+    </div>
+</div>
+
+<div class="form-container">
+    <form method="POST" action="{{ url_for('add_subject') }}" class="subject-form" id="addForm">
+        <div class="form-group">
+            <label class="form-label" for="name">Subject Name</label>
+            <input
+                type="text"
+                id="name"
+                name="name"
+                class="form-input"
+                placeholder="e.g. Mathematics, Physics, CS101"
+                required
+                maxlength="100"
+                autocomplete="off"
+            />
+            <span class="form-hint">Enter the full name of the subject or course</span>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="total_classes">Total Classes Held</label>
+                <input
+                    type="number"
+                    id="total_classes"
+                    name="total_classes"
+                    class="form-input"
+                    placeholder="e.g. 40"
+                    min="0"
+                    max="9999"
+                    value="0"
+                    required
+                />
+                <span class="form-hint">How many classes have been held so far</span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="attended_classes">Classes Attended</label>
+                <input
+                    type="number"
+                    id="attended_classes"
+                    name="attended_classes"
+                    class="form-input"
+                    placeholder="e.g. 32"
+                    min="0"
+                    max="9999"
+                    value="0"
+                    required
+                />
+                <span class="form-hint">How many you actually attended</span>
+            </div>
+        </div>
+
+        <!-- Live Preview -->
+        <div class="live-preview" id="livePreview">
+            <div class="preview-label">LIVE PREVIEW</div>
+            <div class="preview-content">
+                <div class="preview-percentage" id="previewPercent">0.0%</div>
+                <div class="preview-status" id="previewStatus">Enter class data above</div>
+                <div class="preview-bar-track">
+                    <div class="preview-bar-fill" id="previewBar" style="width:0%"></div>
+                    <div class="preview-bar-marker"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ url_for('index') }}" class="btn-secondary">Cancel</a>
+            <button type="submit" class="btn-primary">Add Subject</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const totalInput = document.getElementById('total_classes');
+    const attendedInput = document.getElementById('attended_classes');
+    const previewPercent = document.getElementById('previewPercent');
+    const previewStatus = document.getElementById('previewStatus');
+    const previewBar = document.getElementById('previewBar');
+
+    function updatePreview() {
+        const total = parseInt(totalInput.value) || 0;
+        const attended = parseInt(attendedInput.value) || 0;
+
+        if (total === 0) {
+            previewPercent.textContent = '0.0%';
+            previewStatus.textContent = 'Enter class data above';
+            previewStatus.className = 'preview-status';
+            previewBar.style.width = '0%';
+            previewBar.className = 'preview-bar-fill';
+            return;
+        }
+
+        const pct = Math.min((attended / total) * 100, 100);
+        previewPercent.textContent = pct.toFixed(1) + '%';
+        previewBar.style.width = pct + '%';
+
+        if (pct >= 75) {
+            previewStatus.textContent = '✓ You are SAFE — above 75% threshold';
+            previewStatus.className = 'preview-status status-safe';
+            previewBar.className = 'preview-bar-fill fill-safe';
+            previewPercent.className = 'preview-percentage text-safe';
+        } else {
+            const needed = calculateNeeded(attended, total);
+            previewStatus.textContent = `⚠ AT RISK — Need ${needed} consecutive class(es) to reach 75%`;
+            previewStatus.className = 'preview-status status-danger';
+            previewBar.className = 'preview-bar-fill fill-danger';
+            previewPercent.className = 'preview-percentage text-danger';
+        }
+    }
+
+    function calculateNeeded(attended, total) {
+        let a = attended, t = total, count = 0;
+        while (t > 0 && (a / t) * 100 < 75 && count <= 200) {
+            a++; t++; count++;
+        }
+        return count;
+    }
+
+    totalInput.addEventListener('input', updatePreview);
+    attendedInput.addEventListener('input', updatePreview);
+</script>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — AttendIQ{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-text">
+        <h1 class="page-title">Your Dashboard</h1>
+        <p class="page-subtitle">Track. Predict. Stay Safe.</p>
+    </div>
+    <div class="header-badge">75% Zone</div>
+</div>
+
+<!-- Stats Bar -->
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.total_subjects }}</div>
+        <div class="stat-label">Total Subjects</div>
+    </div>
+    <div class="stat-card stat-safe">
+        <div class="stat-number">{{ stats.safe }}</div>
+        <div class="stat-label">Safe ≥75%</div>
+    </div>
+    <div class="stat-card stat-risk">
+        <div class="stat-number">{{ stats.at_risk }}</div>
+        <div class="stat-label">At Risk &lt;75%</div>
+    </div>
+</div>
+
+{% if subjects %}
+<!-- Risk Alert Banner -->
+{% if stats.at_risk > 0 %}
+<div class="alert-banner">
+    <span class="alert-pulse"></span>
+    <strong>⚠ Warning:</strong> {{ stats.at_risk }} subject{{ 's' if stats.at_risk > 1 }} below 75% threshold. Immediate action required.
+</div>
+{% endif %}
+
+<!-- Subject Grid -->
+<div class="subjects-grid">
+    {% for subject in subjects %}
+    <div class="subject-card {% if subject.percentage < 75 %}card-danger{% else %}card-safe{% endif %}">
+        <div class="card-header-row">
+            <div class="subject-name">{{ subject.name }}</div>
+            <div class="status-badge {% if subject.percentage < 75 %}badge-danger{% else %}badge-safe{% endif %}">
+                {% if subject.percentage < 75 %}AT RISK{% else %}SAFE{% endif %}
+            </div>
+        </div>
+
+        <!-- Circular Progress -->
+        <div class="progress-ring-container">
+            <svg class="progress-ring" width="110" height="110" viewBox="0 0 110 110">
+                <circle class="ring-bg" cx="55" cy="55" r="46"/>
+                <circle class="ring-fill {% if subject.percentage < 75 %}ring-danger{% endif %}"
+                    cx="55" cy="55" r="46"
+                    stroke-dasharray="289"
+                    stroke-dashoffset="{{ 289 - (289 * subject.percentage / 100) | round(2) }}"
+                    data-percentage="{{ subject.percentage }}"
+                />
+            </svg>
+            <div class="ring-label">
+                <span class="ring-percent {% if subject.percentage < 75 %}text-danger{% endif %}">
+                    {{ "%.1f"|format(subject.percentage) }}%
+                </span>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="card-stats">
+            <div class="card-stat">
+                <span class="card-stat-num">{{ subject.attended_classes }}</span>
+                <span class="card-stat-lbl">Attended</span>
+            </div>
+            <div class="card-stat-divider"></div>
+            <div class="card-stat">
+                <span class="card-stat-num">{{ subject.total_classes }}</span>
+                <span class="card-stat-lbl">Total</span>
+            </div>
+            <div class="card-stat-divider"></div>
+            <div class="card-stat">
+                <span class="card-stat-num">{{ subject.total_classes - subject.attended_classes }}</span>
+                <span class="card-stat-lbl">Missed</span>
+            </div>
+        </div>
+
+        <!-- Bar -->
+        <div class="progress-bar-wrap">
+            <div class="progress-bar-track">
+                <div class="progress-bar-fill {% if subject.percentage < 75 %}fill-danger{% endif %}"
+                     style="width: {{ [subject.percentage, 100]|min }}%"></div>
+                <div class="progress-bar-marker" style="left: 75%"></div>
+            </div>
+            <div class="progress-bar-labels">
+                <span>0%</span>
+                <span class="marker-label">75%</span>
+                <span>100%</span>
+            </div>
+        </div>
+
+        <a href="{{ url_for('subject_detail', subject_id=subject.id) }}" class="card-btn">
+            View Details →
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<!-- Empty State -->
+<div class="empty-state">
+    <div class="empty-icon">◈</div>
+    <h2 class="empty-title">No subjects yet</h2>
+    <p class="empty-text">Add your first subject to start tracking attendance and stay above the 75% threshold.</p>
+    <a href="{{ url_for('add_subject') }}" class="btn-primary">+ Add Your First Subject</a>
+</div>
+{% endif %}
+{% endblock %}
